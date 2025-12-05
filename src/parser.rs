@@ -983,30 +983,43 @@ impl<'a> WvgParser<'a> {
     }
 
     /// Parses override attributes for a reuse element.
-    /// 
+    ///
+    /// Per spec: `<OverrideAttributeSet> ::= 0 | (1 <line type>)
+    ///                                       0 | (1 <line width>)
+    ///                                       0 | (1 <line color>)
+    ///                                       0 | (1 <fill>)
+    ///                                       0 | (1 <fill color>)`
+    ///
     /// Note: While line type and width are parsed, line color and fill color
     /// are currently set to black as placeholders. Full color parsing should be implemented.
     fn parse_override_attribute_set(&mut self) -> WvgResult<ElementAttributes> {
         let mut attrs = ElementAttributes::default();
 
+        // 0 | (1 <line type>)
         if self.bs.read_bit()? == 1 {
             attrs.line_type = Some(LineType::from(self.bs.read_bits(2)?));
         }
 
+        // 0 | (1 <line width>)
         if self.bs.read_bit()? == 1 {
             attrs.line_width = Some(LineWidth::from(self.bs.read_bits(2)?));
         }
 
+        // 0 | (1 <line color>)
         if self.bs.read_bit()? == 1 {
-            // TODO: Parse line color
+            // TODO: Parse line color based on color scheme
             attrs.line_color = Some(Color::BLACK);
         }
 
+        // 0 | (1 <fill>)
         if self.bs.read_bit()? == 1 {
-            if self.bs.read_bit()? == 1 {
-                // TODO: Parse fill color
-                attrs.fill_color = Some(Color::BLACK);
-            }
+            attrs.fill = Some(self.bs.read_bit()? == 1);
+        }
+
+        // 0 | (1 <fill color>)
+        if self.bs.read_bit()? == 1 {
+            // TODO: Parse fill color based on color scheme
+            attrs.fill_color = Some(Color::BLACK);
         }
 
         Ok(attrs)
